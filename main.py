@@ -60,7 +60,7 @@ TIEMPO_INICIO = pygame.time.get_ticks()  # Guardar el tiempo en que comenzó la 
 class Fruta:
     def __init__(self, tipo, x, y, tamano):
         self.tipo = tipo
-        self.imagen = pygame.image.load(f"./images/{tipo}.png")
+        self.imagen = pygame.image.load(f"./images/fruits/{tipo}.png")
         self.imagen = pygame.transform.scale(self.imagen, (tamano, tamano))
         self.tamano = tamano
         self.radio = tamano // 2
@@ -258,6 +258,7 @@ def manejar_colisiones(frutas, puntaje):
     combinaciones = []
     frutas_a_eliminar = []
 
+    # Detectar colisiones
     for i in range(len(frutas)):
         for j in range(i + 1, len(frutas)):
             if frutas[i].chequear_colision(frutas[j]):
@@ -282,11 +283,12 @@ def manejar_colisiones(frutas, puntaje):
                     frutas[i].soltada = True  # Marcar como "soltadas" tras separarse
                     frutas[j].soltada = True
 
-    # Eliminar frutas marcadas para eliminación
-    frutas = [fruta for k, fruta in enumerate(frutas) if k not in frutas_a_eliminar]
+    # Eliminar frutas marcadas para eliminación fuera del bucle
+    for j in sorted(frutas_a_eliminar, reverse=True):
+        frutas.pop(j)
 
-    # Agregar nuevas combinaciones de frutas
-    for i, j, nueva_fruta in combinaciones:
+    # Agregar nuevas combinaciones de frutas fuera del bucle
+    for i, j, nueva_fruta in sorted(combinaciones, key=lambda x: x[1], reverse=True):
         frutas[i] = nueva_fruta
         frutas.pop(j)
 
@@ -309,7 +311,7 @@ def dibujar_guia(ventana, fruta_tipo, fruta_tamano, mouse_x):
                     (CUBETA_X + CUBETA_ANCHO - GROSOR_PAREDES, CUBETA_Y - 30), 2)
 
     # Dibujar la previsualización de la fruta en la línea de guía
-    fruta_imagen = pygame.image.load(f"./images/{fruta_tipo}.png")
+    fruta_imagen = pygame.image.load(f"./images/fruits/{fruta_tipo}.png")
     fruta_imagen = pygame.transform.scale(fruta_imagen, (fruta_tamano, fruta_tamano))
     ventana.blit(fruta_imagen, (x - fruta_tamano // 2, CUBETA_Y - fruta_tamano // 2 - 30))
 
