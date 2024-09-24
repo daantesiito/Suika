@@ -1,6 +1,7 @@
 import pygame
 import random
 import time
+import os
 
 # Inicializar pygame
 pygame.init()
@@ -15,6 +16,7 @@ pygame.display.set_caption("Suika Game")
 BLANCO = (255, 255, 255)
 NEGRO = (0, 0, 0)
 VERDE = (0, 255, 0)
+ROJO = (255, 0, 0)
 
 # Frames por segundo
 FPS = 60
@@ -42,12 +44,17 @@ GROSOR_PAREDES = 20
 # Posición de la cubeta, centrada en la pantalla
 CUBETA_X = (ANCHO - CUBETA_ANCHO) // 2
 CUBETA_Y = 400
-LINEA_DE_PERDIDA_Y = CUBETA_Y  # O un valor diferente si la línea está en otro lugar
-
+LINEA_DE_PERDIDA_Y = CUBETA_Y
 
 # Tiempo de espera entre tiros de frutas (en segundos)
 TIEMPO_ESPERA_TIRO = 0.01
-ultimo_tiro = 0  # Tiempo del último tiro
+ultimo_tiro = 0
+
+# Constantes para el temporizador y el puntaje alto
+TIMER_FONT = pygame.font.SysFont(None, 48)
+HIGH_SCORE_FILE = "highscore.txt"
+
+TIEMPO_INICIO = pygame.time.get_ticks()  # Guardar el tiempo en que comenzó la partida
 
 # Modificar la clase Fruta para incluir el atributo "soltada"
 class Fruta:
@@ -121,6 +128,120 @@ class Fruta:
             self.pos_anterior.y = self.pos_actual.y  # Evitar que la fruta caiga más allá del piso
             self.marcar_soltada()  # Marca la fruta como "soltada" al tocar el fondo de la cubeta
 
+def guardar_puntaje_alto(puntaje):
+    with open(HIGH_SCORE_FILE, "w") as archivo:
+        archivo.write(str(puntaje))
+
+def cargar_puntaje_alto():
+    if os.path.exists(HIGH_SCORE_FILE):
+        with open(HIGH_SCORE_FILE, "r") as archivo:
+            return int(archivo.read())
+    return 0
+
+def mostrar_menu_inicio():
+    puntaje_alto = cargar_puntaje_alto()
+    menu_ejecutando = True
+    while menu_ejecutando:
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            if evento.type == pygame.MOUSEBUTTONDOWN:
+                mouse_x, mouse_y = pygame.mouse.get_pos()
+                if boton_iniciar.collidepoint(mouse_x, mouse_y):
+                    menu_ejecutando = False
+                if boton_instrucciones.collidepoint(mouse_x, mouse_y):
+                    mostrar_instrucciones()
+                if boton_salir.collidepoint(mouse_x, mouse_y):
+                    pygame.quit()
+                    exit()
+
+        VENTANA.fill(BLANCO)
+        titulo_font = pygame.font.SysFont(None, 72)
+        titulo_texto = titulo_font.render("Suika Game", True, NEGRO)
+        VENTANA.blit(titulo_texto, (ANCHO // 2 - titulo_texto.get_width() // 2, ALTO // 4))
+
+        puntaje_font = pygame.font.SysFont(None, 48)
+        puntaje_texto = puntaje_font.render(f"Puntaje más alto: {puntaje_alto}", True, NEGRO)
+        VENTANA.blit(puntaje_texto, (ANCHO // 2 - puntaje_texto.get_width() // 2, ALTO // 2))
+
+        boton_iniciar = pygame.Rect(ANCHO // 2 - 100, ALTO // 2 + 100, 200, 50)
+        pygame.draw.rect(VENTANA, VERDE, boton_iniciar)
+        iniciar_texto = puntaje_font.render("Iniciar", True, NEGRO)
+        VENTANA.blit(iniciar_texto, (boton_iniciar.x + 60, boton_iniciar.y + 10))
+
+        boton_instrucciones = pygame.Rect(ANCHO // 2 - 100, ALTO // 2 + 200, 200, 50)
+        pygame.draw.rect(VENTANA, VERDE, boton_instrucciones)
+        instrucciones_texto = puntaje_font.render("Instrucciones", True, NEGRO)
+        VENTANA.blit(instrucciones_texto, (boton_instrucciones.x + 10, boton_instrucciones.y + 10))
+
+        boton_salir = pygame.Rect(ANCHO // 2 - 100, ALTO // 2 + 300, 200, 50)
+        pygame.draw.rect(VENTANA, ROJO, boton_salir)
+        salir_texto = puntaje_font.render("Salir", True, NEGRO)
+        VENTANA.blit(salir_texto, (boton_salir.x + 60, boton_salir.y + 10))
+
+        pygame.display.flip()
+
+def mostrar_instrucciones():
+    instrucciones_ejecutando = True
+    while instrucciones_ejecutando:
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            if evento.type == pygame.KEYDOWN and evento.key == pygame.K_ESCAPE:
+                instrucciones_ejecutando = False
+
+        VENTANA.fill(BLANCO)
+        instrucciones_img = pygame.image.load('./images/instructions.png')
+        VENTANA.blit(instrucciones_img, (ANCHO // 2 - instrucciones_img.get_width() // 2, ALTO // 2 - instrucciones_img.get_height() // 2))
+
+        pygame.display.flip()
+
+def mostrar_pantalla_perdida(puntaje):
+    pantalla_perdida_ejecutando = True
+    while pantalla_perdida_ejecutando:
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            if evento.type == pygame.MOUSEBUTTONDOWN:
+                mouse_x, mouse_y = pygame.mouse.get_pos()
+                if boton_reintentar.collidepoint(mouse_x, mouse_y):
+                    return "reintentar"  # Indicar que se ha seleccionado "Reintentar"
+                if boton_salir.collidepoint(mouse_x, mouse_y):
+                    pygame.quit()
+                    exit()
+
+        VENTANA.fill(BLANCO)
+        perdiste_font = pygame.font.SysFont(None, 72)
+        perdiste_texto = perdiste_font.render("¡Perdiste!", True, ROJO)
+        VENTANA.blit(perdiste_texto, (ANCHO // 2 - perdiste_texto.get_width() // 2, ALTO // 4))
+
+        puntaje_font = pygame.font.SysFont(None, 48)
+        puntaje_texto = puntaje_font.render(f"Puntaje final: {puntaje} puntos", True, NEGRO)
+        VENTANA.blit(puntaje_texto, (ANCHO // 2 - puntaje_texto.get_width() // 2, ALTO // 2))
+
+        # Botón Reintentar
+        boton_reintentar = pygame.Rect(ANCHO // 2 - 150, ALTO // 2 + 100, 300, 50)
+        pygame.draw.rect(VENTANA, VERDE, boton_reintentar)
+        reintentar_texto = puntaje_font.render("Reintentar", True, NEGRO)
+        VENTANA.blit(reintentar_texto, (boton_reintentar.x + 80, boton_reintentar.y + 10))
+
+        # Botón Salir
+        boton_salir = pygame.Rect(ANCHO // 2 - 150, ALTO // 2 + 200, 300, 50)
+        pygame.draw.rect(VENTANA, ROJO, boton_salir)
+        salir_texto = puntaje_font.render("Salir", True, NEGRO)
+        VENTANA.blit(salir_texto, (boton_salir.x + 120, boton_salir.y + 10))
+
+        pygame.display.flip()
+
+def mostrar_tiempo_jugado():
+    tiempo_transcurrido = (pygame.time.get_ticks() - TIEMPO_INICIO) // 1000  # Convertir a segundos
+    minutos = tiempo_transcurrido // 60
+    segundos = tiempo_transcurrido % 60
+    tiempo_texto = TIMER_FONT.render(f"Tiempo jugado: {minutos:02}:{segundos:02}", True, NEGRO)
+    VENTANA.blit(tiempo_texto, (50, 50))
 
 # Función para separar las frutas si colisionan, con menor rebote
 def separar_frutas(fruta1, fruta2):
@@ -208,7 +329,7 @@ def dibujar_linea_perdida(ventana):
                      (CUBETA_X + GROSOR_PAREDES, ALTURA_MAXIMA_PERDIDA), 
                      (CUBETA_X + CUBETA_ANCHO - GROSOR_PAREDES, ALTURA_MAXIMA_PERDIDA), 2)
 
-# Dentro de la función principal del juego
+# Inicia el tiempo justo al empezar el juego
 def juego():
     frutas = []
     clock = pygame.time.Clock()
@@ -216,6 +337,9 @@ def juego():
     puntaje = 0  # Puntaje inicial
     proxima_fruta_tipo, proximo_tamano = FRUTAS[0]
     global ultimo_tiro
+    
+    # Reiniciar el tiempo de inicio al comenzar el juego
+    tiempo_inicio = time.time()
 
     while ejecutando:
         dt = clock.tick(FPS) / 1000  # Delta time en segundos
@@ -247,11 +371,20 @@ def juego():
         # Manejar colisiones y combinar frutas
         frutas, puntaje = manejar_colisiones(frutas, puntaje)
 
-        # Dentro del bucle del juego, en vez de verificar si cualquier fruta cruza la línea,
-        # verificar solo si las frutas "soltadas" cruzan la línea
+        # Verificar si se pierde
         if verificar_perdida(frutas):
-            print("¡Has perdido!")
-            ejecutando = False
+            resultado = mostrar_pantalla_perdida(puntaje)  # Muestra la pantalla de pérdida
+            if resultado == "reintentar":
+                # Reiniciar variables necesarias para jugar de nuevo
+                puntaje = 0
+                frutas = []  # Reinicia la lista de frutas, o el estado necesario
+                TIEMPO_INICIO = pygame.time.get_ticks()  # Reiniciar el temporizador
+                continue  # Reiniciar el juego
+            else:
+                ejecutando = False  # Salir del bucle principal y cerrar el juego
+            guardar_puntaje_alto(puntaje)
+            mostrar_pantalla_perdida(puntaje)
+            break
 
         # Dibujar todo
         VENTANA.fill(BLANCO)  # Limpiar la pantalla
@@ -271,9 +404,13 @@ def juego():
         texto_puntaje = font.render(f"Puntaje: {puntaje}", True, NEGRO)
         VENTANA.blit(texto_puntaje, (50, 150))
 
+        tiempo_jugado = int(time.time() - tiempo_inicio)
+        mostrar_tiempo_jugado()
+
         pygame.display.flip()
 
     pygame.quit()
 
-# Ejecutar el juego
+# Mostrar el menú de inicio y comenzar el juego
+mostrar_menu_inicio()
 juego()
