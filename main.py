@@ -52,7 +52,7 @@ ultimo_tiro = 0
 
 # Constantes para el temporizador y el puntaje alto
 TIMER_FONT = pygame.font.SysFont(None, 48)
-HIGH_SCORE_FILE = "highscore.txt"
+HIGH_SCORE_FILE = "./highscore.txt"
 
 TIEMPO_INICIO = pygame.time.get_ticks()  # Guardar el tiempo en que comenzó la partida
 
@@ -129,13 +129,18 @@ class Fruta:
             self.marcar_soltada()  # Marca la fruta como "soltada" al tocar el fondo de la cubeta
 
 def guardar_puntaje_alto(puntaje):
-    with open(HIGH_SCORE_FILE, "w") as archivo:
-        archivo.write(str(puntaje))
+    puntaje_alto_actual = cargar_puntaje_alto()
+    if puntaje > puntaje_alto_actual:  # Guardar solo si el puntaje es mayor
+        with open(HIGH_SCORE_FILE, "w") as archivo:
+            archivo.write(str(puntaje))
 
 def cargar_puntaje_alto():
     if os.path.exists(HIGH_SCORE_FILE):
         with open(HIGH_SCORE_FILE, "r") as archivo:
-            return int(archivo.read())
+            try:
+                return int(archivo.read().strip())
+            except ValueError:  # En caso de un error de lectura
+                return 0
     return 0
 
 def mostrar_menu_inicio():
@@ -208,6 +213,7 @@ def mostrar_pantalla_perdida(puntaje):
             if evento.type == pygame.MOUSEBUTTONDOWN:
                 mouse_x, mouse_y = pygame.mouse.get_pos()
                 if boton_reintentar.collidepoint(mouse_x, mouse_y):
+                    pygame.event.clear()  # Limpiar todos los eventos acumulados
                     return "reintentar"  # Indicar que se ha seleccionado "Reintentar"
                 if boton_salir.collidepoint(mouse_x, mouse_y):
                     pygame.quit()
@@ -375,8 +381,10 @@ def juego():
 
         # Verificar si se pierde
         if verificar_perdida(frutas):
+            guardar_puntaje_alto(puntaje)  # Guardar el puntaje antes de mostrar la pantalla de pérdida
             resultado = mostrar_pantalla_perdida(puntaje)  # Muestra la pantalla de pérdida
             if resultado == "reintentar":
+                guardar_puntaje_alto(puntaje)  # Guardar el puntaje antes de mostrar la pantalla de pérdida
                 # Reiniciar variables necesarias para jugar de nuevo
                 puntaje = 0
                 frutas = []  # Reinicia la lista de frutas, o el estado necesario
@@ -384,8 +392,6 @@ def juego():
                 continue  # Reiniciar el juego
             else:
                 ejecutando = False  # Salir del bucle principal y cerrar el juego
-            guardar_puntaje_alto(puntaje)
-            mostrar_pantalla_perdida(puntaje)
             break
 
         # Dibujar todo
