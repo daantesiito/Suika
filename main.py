@@ -6,10 +6,14 @@ import os
 # Inicializar pygame
 pygame.init()
 
-# Dimensiones de la ventana del juego (FullScreen)
-ANCHO = 1920
-ALTO = 1080
+# Obtener las dimensiones de la pantalla actual
+info_pantalla = pygame.display.Info()
+ANCHO = info_pantalla.current_w  # Ancho de la pantalla
+ALTO = info_pantalla.current_h  # Alto de la pantalla
+
+# Configurar la ventana en modo pantalla completa adaptándose a las dimensiones del monitor
 VENTANA = pygame.display.set_mode((ANCHO, ALTO), pygame.FULLSCREEN)
+
 pygame.display.set_caption("Suika Game")
 
 # Colores
